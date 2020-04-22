@@ -25,7 +25,7 @@ float [][] asteriods = new float[MAX_ASTERIODS][7];
 
 int bulletSpeed = 15;
 
-int [][] explosions = new int[20][3];
+Explosion [] explosions = new Explosion[20];
 
 int maxExplosions =0;
 int minExplosions =0;
@@ -51,7 +51,7 @@ void drawExplosion(int x, int y, int count) {
   translate(-16, -16);
   image(explosion.get((count % 5) * 64, (count / 5) * 64 , 64, 64), 0,0,64,64);
   popMatrix();
-}
+} 
 
 void createAsteriod(int pos) {
   int side = int(random(4));
@@ -122,10 +122,11 @@ void checkForHit(int bulletNum) {
    
    //https://glossar.hs-augsburg.de/Axis_Aligned_Bounding_Box
    for (int i=0; i<MAX_ASTERIODS; i++) {
-      float left = asteriods[i][0];
-      float right = asteriods[i][0] + 32;
-      float top = asteriods[i][1];
-      float bottom = asteriods[i][1]+32;
+      float left = asteriods[i][0] - 16;
+      float right = asteriods[i][0] + 16;
+      float top = asteriods[i][1] - 16;
+      float bottom = asteriods[i][1]+ 16;
+    
       
       //Bounding Boxs
       if (left <= x && x <= right && top <= y && y <= bottom) {
@@ -136,9 +137,10 @@ void checkForHit(int bulletNum) {
         if (minExplosions>0) {
           pos=--minExplosions;
         } else {
-          pos=++maxExplosions;
+          pos=maxExplosions++;
         }
-        explosions[pos]=new int[]{(int)left, (int)top, (int)0.0};
+        println("MinExplosion: " + minExplosions  + " pos: " + pos);
+        explosions[pos]=new Explosion(explosion, (int) left,(int) top);
         //
         
         createAsteriod(i);
@@ -190,13 +192,10 @@ void draw() {
   pushMatrix();
   translate (xpos, ypos);
 
-  // Winkel zwischen Dreick und Maus berechnenh
-  //float angle = atan2 (mouseY - ypos, mouseX - xpos) + PI/2;
-
   // Koordinatensystem rotieren
   rotate (radians(angle));
   translate(- 16, - 16);
-  image(img, 0, 0, 32, 32);
+  image(img, 0, 0, 32, 32); 
   popMatrix();
      
   //Asteriod
@@ -210,7 +209,7 @@ void draw() {
      scale(asteriods[i][4]);
      rotate(radians(asteriods[i][5]));
      translate(-16, -16);
-     image(asteroid,0,0,32,32);
+     image(asteroid,0,0,32,32);       
      popMatrix();
      if (asteriods[i][0]<0 || asteriods[i][0]>width || asteriods[i][1]<0 || asteriods[i][1]>height) {
      
@@ -232,6 +231,18 @@ void draw() {
       if (a_left <= g_rgt  && g_lft <= a_right && a_top <= g_btm && g_top <= a_bottom) {
         print ("Kollision");
         
+         //Add Explosions
+        int pos=0;
+        if (minExplosions>0) {
+          pos=--minExplosions;
+        } else {
+          pos=maxExplosions;
+          maxExplosions++;
+        }
+        explosions[pos]=new Explosion(explosion, (int) a_left, (int)a_top);
+        createAsteriod(i);
+        //
+        
       /*  alive=false;
         speed=0;
         points=0;
@@ -242,15 +253,12 @@ void draw() {
 
   //Draw Explosion
   for (int pos = minExplosions;pos<maxExplosions;pos++) {
-    int count = explosions[pos][2];
-    int x = explosions[pos][0];
-    int y = explosions[pos][1];
-    
-    drawExplosion(x,y, count);        
-    explosions[pos][2]++;
-    if (explosions[pos][2]>32) {
-       minExplosions++; 
+    if (explosions[pos].isActive()) {
+      explosions[pos].draw();
+    } else {
+      minExplosions++;
     }
+    
   }
   
   textSize(32);
